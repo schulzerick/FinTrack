@@ -1,0 +1,15 @@
+CREATE TABLE TransactionEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    amountCents INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    categoryId INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT ''
+);
+
+selectAll:
+SELECT * FROM TransactionEntity ORDER BY date DESC, id DESC;
+
+insert:
+INSERT INTO TransactionEntity (amountCents, type, categoryId, date, note)
+VALUES (?, ?, ?, ?, ?);
