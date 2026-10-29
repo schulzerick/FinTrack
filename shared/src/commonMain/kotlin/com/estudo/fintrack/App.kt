@@ -8,16 +8,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.estudo.fintrack.data.DatabaseDriverFactory
-import com.estudo.fintrack.data.InMemoryTransactionRepository
 import com.estudo.fintrack.data.SqlDelightTransactionRepository
 import com.estudo.fintrack.db.FinTrackDatabase
 import com.estudo.fintrack.presentation.SummaryViewModel
+import com.estudo.fintrack.presentation.TransactionViewModel
+import com.estudo.fintrack.ui.TransactionList
 
 
 @Composable
@@ -25,16 +26,17 @@ import com.estudo.fintrack.presentation.SummaryViewModel
 fun App(driverFactory: DatabaseDriverFactory) {
     MaterialTheme {
 
-
-
-
-        val viewModel = viewModel {
+        val repository = remember{
             val driver = driverFactory.createDriver()
             val db = FinTrackDatabase(driver)
-            val repository = SqlDelightTransactionRepository(db)
-            SummaryViewModel(repository) }
+            SqlDelightTransactionRepository(db)
+        }
 
-        val state by viewModel.uiState.collectAsStateWithLifecycle()
+        val summaryViewModel = viewModel { SummaryViewModel(repository) }
+        val transactionViewModel = viewModel { TransactionViewModel(repository) }
+
+        val summaryState by summaryViewModel.uiState.collectAsStateWithLifecycle()
+        val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
 
         Column(
             modifier = Modifier
@@ -42,13 +44,15 @@ fun App(driverFactory: DatabaseDriverFactory) {
                 .padding(16.dp)
         ){
 
-            Text("Ingresos: ${state.income}")
-            Text("Gastos: ${state.expense}")
-            Text("Balance: ${state.balance}")
+            Text("Ingresos: ${summaryState.income}")
+            Text("Gastos: ${summaryState.expense}")
+            Text("Balance: ${summaryState.balance}")
 
-            Button(onClick = { viewModel.addTestExpense() }) {
+            Button(onClick = { summaryViewModel.addTestExpense() }) {
                 Text("Añadir gasto de prueba")
             }
+
+            TransactionList(transactionState.items, modifier = Modifier.weight(1f))
 
 
         }

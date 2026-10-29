@@ -84,6 +84,23 @@ Documentos relacionados: [planificacion.md](planificacion.md) · [tests/](tests/
 
 ---
 
+## Bloque 4 — Lista de movimientos (en curso)
+
+**B1 completado: el modelo de una fila.** `TransactionItemUi` es lo que una fila de la lista necesita para dibujarse, con todo ya formateado (`title`, `amount`, `date` como texto e `isExpense`). `Transaction.toItemUi()` lo construye desde el dominio:
+
+- El importe se guarda siempre positivo; el tipo decide el signo (`+` ingreso, `-` gasto).
+- La fecha se formatea como `dd/MM/yyyy` convirtiendo día y mes a texto y rellenando con `padStart(2, '0')`. En una plantilla de string, las expresiones con punto se escriben con llaves: `${date.year}`.
+- Sin nota, el título es `"Sin nota"` (`note.ifBlank { ... }`).
+- `isExpense` es la comparación `type == MovementType.EXPENSE`, que ya es un `Boolean`.
+
+**Flujo de trabajo con tests (rojo → verde).** 1) Crear la forma mínima de lo que se prueba (modelo y función con `TODO()`); 2) escribir el test y verlo fallar; 3) implementar hasta que pase. Un test en rojo lleva siempre a una pregunta: ¿se equivoca el código o el valor esperado? Se decide contrastando con la regla, y el esperado se **deduce campo a campo desde la entrada**, nunca de memoria ni copiando el resultado real.
+
+**Herramienta útil:** en el panel de resultados, al pulsar un test fallido aparece "Click to see difference", una comparación lado a lado del esperado y el obtenido.
+
+**Texto de usuario.** Los textos como `"Sin nota"` están escritos en el código. En una app real irían en archivos de recursos para poder traducirlos (Compose Multiplatform tiene un sistema para ello). Queda como mejora futura.
+
+---
+
 ## Criterios de diseño
 
 **¿Clase o función suelta?** Una clase aporta algo cuando (1) guarda estado entre llamadas, (2) cumple un contrato o debe ser sustituible, o (3) recibe dependencias por constructor que usa en varias funciones. Si ninguna se cumple, una función suelta es suficiente.
@@ -104,6 +121,8 @@ Documentos relacionados: [planificacion.md](planificacion.md) · [tests/](tests/
 | Funciones de extensión dentro de una `class` (ocurrió tres veces: `formatCents`, `toDomain`, `toItemUi`) | Las extensiones reutilizables van sueltas en el archivo. Truco visual: una función suelta empieza en el margen izquierdo, sin sangría |
 | Firma mal escrita: `fun X.f: Tipo(){` | Estructura de una función: `fun` nombre `(` parámetros `)` `:` tipo `{`. Los paréntesis van siempre tras el nombre |
 | Crear primero un test sin que existan las clases que usa | Flujo correcto: forma mínima, test en rojo, implementar hasta verde |
+| Valores esperados de un test que contradecían su propia entrada (un `EXPENSE` con esperado de ingreso: `+` e `isExpense = false`) | El tipo de la entrada decide el signo y `isExpense`. Antes de escribir el esperado, leer la entrada y deducir cada campo con su regla |
+| Una fecha esperada con el año mal tecleado (`2006` en vez de `2026`) | Es el tipo de despiste que los tests existen para cazar; hay que ejecutarlos siempre |
 | Una función `suspend` llamada sin `launch` | Las funciones `suspend` se llaman desde una corrutina |
 | `insert(...)` sin indicar de qué objeto es | Toda función pertenece a un objeto: `database.transactionEntityQueries.insert(...)` |
 | Un test que fallaba por el nombre antiguo de otro test | El IDE guarda configuraciones de ejecución; se vuelve a lanzar desde la clase |
