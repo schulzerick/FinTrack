@@ -1,0 +1,13 @@
+CREATE TABLE CategoryEntity(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+selectAll:
+SELECT * FROM CategoryEntity ORDER BY name;
+
+insert:
+INSERT INTO CategoryEntity (name)
+VALUES(?);
+
+

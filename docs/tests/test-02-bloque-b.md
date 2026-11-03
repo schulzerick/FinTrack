@@ -61,6 +61,26 @@ La diferencia clave que no mencionaste: el `map` de fuera actúa **a lo largo de
 
 ---
 
+## Pregunta 4
+En `App()` el repositorio se crea dentro de un `remember { }` en lugar de escribir las tres líneas directamente en el cuerpo de la función.
+a) ¿Qué problema tendría escribirlas directamente, sin `remember`?
+b) ¿Por qué hacía falta sacar el repositorio fuera de los `viewModel { }`?
+
+**Respuesta del alumno:**
+> 1. Se crearia un repositroio cada vez que el compose se redibujara creando varias bases de datos inecesarias
+> 2. Ya que ahora el repository es compartido por mas de un viewModel
+
+**Valoración:** a) ✅ · b) 🟡
+
+**Corrección:**
+
+- **a) Correcto.** Una función `@Composable` se vuelve a ejecutar entera en cada recomposición. Sin `remember`, cada redibujado crearía un driver, una `FinTrackDatabase` y un repositorio nuevos. `remember` guarda el valor y solo ejecuta la lambda la primera vez. Matiz para la defensa: `remember` sobrevive a las recomposiciones, pero no a que Android destruya y recree la pantalla (por ejemplo, al rotar el móvil). Los ViewModels sí sobreviven a eso y conservan el repositorio antiguo, mientras `remember` crea uno nuevo que nadie usa. Es una limitación del cableado manual que justifica la inyección de dependencias (Koin).
+- **b) Correcto en la idea, pero repite el enunciado.** "Es compartido por más de un ViewModel" dice *que* se comparte, no *por qué importa*. La consecuencia es la que faltaba: si cada `viewModel { }` creara su propio repositorio, habría **dos conexiones a la base de datos** y el aviso `notifyQueries` de un `insert` solo llegaría a los observadores de *su* repositorio. Al pulsar el botón se actualizaría el resumen pero **no la lista** (o al revés). Compartir una sola instancia garantiza que ambos ViewModels observan los mismos datos y se enteran de los mismos cambios.
+
+**Patrón a repetir:** completar siempre "qué pasaría si no" (la consecuencia), que es lo que convierte una respuesta correcta en una respuesta que se puede defender.
+
+---
+
 ## Resultado parcial
 
 | Pregunta | Valoración |
@@ -68,3 +88,4 @@ La diferencia clave que no mencionaste: el `map` de fuera actúa **a lo largo de
 | 1 | 🟡 |
 | 2 | ❌ al principio; ✅ en el reintento con caso práctico |
 | 3 | ✅ |
+| 4 | a) ✅ · b) 🟡 |
