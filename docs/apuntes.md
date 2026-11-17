@@ -84,7 +84,7 @@ Documentos relacionados: [planificacion.md](planificacion.md) · [tests/](tests/
 
 ---
 
-## Bloque 4 — Lista de movimientos (en curso)
+## Bloque 4 — Lista de movimientos, categorías y formulario de alta
 
 **B1 completado: el modelo de una fila.** `TransactionItemUi` es lo que una fila de la lista necesita para dibujarse, con todo ya formateado (`title`, `amount`, `date` como texto e `isExpense`). `Transaction.toItemUi()` lo construye desde el dominio:
 
@@ -98,6 +98,28 @@ Documentos relacionados: [planificacion.md](planificacion.md) · [tests/](tests/
 **Herramienta útil:** en el panel de resultados, al pulsar un test fallido aparece "Click to see difference", una comparación lado a lado del esperado y el obtenido.
 
 **Texto de usuario.** Los textos como `"Sin nota"` están escritos en el código. En una app real irían en archivos de recursos para poder traducirlos (Compose Multiplatform tiene un sistema para ello). Queda como mejora futura.
+
+**B2 y B3: la lista en pantalla.**
+
+- `TransactionRow` dibuja una fila: una `Row` con `Arrangement.SpaceBetween` (título y fecha a la izquierda en una `Column`, importe a la derecha). El color del importe sale del tema (`colorScheme.error` para gastos, `primary` para ingresos) con un `if` como expresión, así se adapta solo al cambiar el tema.
+- `TransactionList` usa `LazyColumn` con `items(..., key = { it.id })`. Solo dibuja las filas visibles, y la `key` permite a Compose reconocer qué fila es cuál cuando la lista cambia. Recibe un `modifier` para que quien la use decida su tamaño (`Modifier.weight(1f)` en `App()`).
+- **Dos ViewModels, un repositorio.** `SummaryViewModel` y `TransactionViewModel` comparten el mismo repositorio, que se crea una sola vez con `remember { }`. Sin `remember` se crearía uno nuevo en cada recomposición; sin compartirlo, cada ViewModel tendría su propia conexión y no se enterarían de los cambios del otro. Este cableado manual es la motivación de Koin.
+
+**B4: categorías.** Misma receta que las transacciones: `CategoryEntity.sq` (tabla, `selectAll ORDER BY name`, `insert`), interfaz `CategoryRepository`, mapper `CategoryEntity.toDomain()` y `SqlDelightCategoryRepository`. Dos funciones de extensión con el mismo nombre (`toDomain`) no chocan: Kotlin elige por el tipo sobre el que se llama.
+
+- **Categorías por defecto.** `SeedDefaultCategoriesUseCase` crea las 7 por defecto solo si la tabla está vacía (guard clause con `return`). Se ejecuta al arrancar con `LaunchedEffect(Unit)`. Es *idempotente*: llamarlo varias veces no duplica nada, y eso es lo que permite ejecutarlo en cada arranque. Se eligió código común frente a sembrar en el driver (sería duplicar la lista en Android y Desktop).
+- **Tests con un repositorio falso.** `FakeCategoryRepository` (en `commonTest`) cumple el contrato con un `MutableStateFlow`, así el caso de uso se prueba sin base de datos. Como `invoke()` es `suspend`, los tests usan `runTest` (de `kotlinx-coroutines-test`).
+- **Limitación conocida:** no se pueden editar ni borrar categorías (borrar plantea qué hacer con los movimientos que la usan).
+- **Si se añade una tabla con una base de datos de Desktop ya existente**, hay que borrar el archivo `~/.fintrack/fintrack.db`: las tablas solo se crean si el archivo es nuevo. En una app real se resolvería con migraciones.
+
+**B5: el formulario de alta.**
+
+- **`parseCents(text): Long?`** convierte el texto del importe en céntimos, o `null` si no es válido. Reglas: coma o punto, máximo dos decimales, sin signo ni cero. Se implementa con texto y enteros, **sin `toDouble()`** (el error de coma flotante). Una cadena de filtros con `?: return null` y `all { it.isDigit() }`; `padEnd(2, '0')` completa `"5"` en `"50"`.
+- **`TransactionFormState`** es todo lo que guarda el formulario mientras se escribe. El importe es un `String` (no un `Long`) porque mientras se teclea `"12,"` no es válido pero debe poder mostrarse. La conversión se hace solo al guardar.
+- **`TransactionFormViewModel`**: un `MutableStateFlow` privado, expuesto de solo lectura con `asStateFlow()`; cuatro funciones `onXChange` de una línea (`_state.update { it.copy(campo = valor) }`); un `init` que observa las categorías con `collect`; y `save()`, que valida **primero** (importe y categoría, con mensaje de error y `return`) y guarda **después**.
+- **Smart cast.** Tras `if (x == null) return`, Kotlin ya trata `x` como no nulo.
+- **`TransactionFormDialog` y *state hoisting*.** El diálogo no guarda estado: recibe el estado y **una función por cada acción** (tipos función como `(String) -> Unit`). `FilterChip` recibe `selected` calculado desde el estado (`state.type == MovementType.EXPENSE`), nunca lo recuerda. `FlowRow` pasa a la línea siguiente cuando no caben las categorías. Se conecta con referencias a función (`formViewModel::onAmountChange`).
+- **`var showForm by remember { mutableStateOf(false) }`**: estado de interfaz (si el diálogo se ve) que vive en el composable, no en el ViewModel.
 
 ---
 
@@ -129,6 +151,18 @@ Documentos relacionados: [planificacion.md](planificacion.md) · [tests/](tests/
 | Un repositorio de SQLDelight creado pero no pasado al ViewModel (se descartaba) | Crear un valor no basta: hay que guardarlo en una variable y usarlo. La app compilaba pero no persistía |
 | `@Preview` en una función con parámetros | Las funciones de previsualización no pueden tener parámetros |
 | No aparecía la opción de ejecutar Desktop | La configuración se crea la primera vez desde el ▶ de `main()` o con la tarea Gradle `:desktopApp:run` |
+| Función de extensión dentro de una `interface` (`CategoryMapper`) | Cuarta vez con el mismo patrón. Además, la `interface CategoryEntity` ocultaba la clase generada y `id`/`name` "no existían" |
+| `assertEquals("12,50", parseCents("12,50"))`: el esperado era la entrada | El esperado es lo que **debe salir** (céntimos o `null`), no lo que entra |
+| Tests de `parseCents` con valores esperados erróneos (12 en vez de 1200; `0` en vez de `null`) | Antes de escribir el esperado: ¿es válido? Si sí, euros × 100 + céntimos; si no, `null` |
+| `implement` en vez de `:` | Kotlin usa `:` para extender y para implementar |
+| Estado guardado en una variable local dentro de una función | El estado compartido entre funciones es una propiedad de la clase |
+| Valores creados y no usados: repositorio no pasado, `collect` con `categoryRepository` suelto, `Transaction(...)` sin `add`, `onClick = { showForm }` | Cuatro veces: compila, pero no hace nada. Pregunta para cazarlo: *¿a dónde va este valor?* |
+| `val db = ...` como última línea de un `remember { }` | La lambda devuelve su última línea; una declaración no es un valor |
+| `it.copy(list)` sin nombre de campo | `copy` recibe los parámetros por nombre: `copy(campo = valor)` |
+| Un `=` donde va `==` (`selected = a = b`) | `=` asigna, `==` compara |
+| Dos campos en lambdas separadas por una coma dentro de `text = { }` | Los hijos de un contenedor se separan con saltos de línea, no con comas |
+| `onClick` con `->` | La flecha solo se usa si la lambda recibe parámetros |
+| Variable declarada después de usarla (`showForm`) | Kotlin lee de arriba abajo: se declara antes |
 
 ---
 

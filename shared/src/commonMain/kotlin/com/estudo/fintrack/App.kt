@@ -9,7 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,7 +22,9 @@ import com.estudo.fintrack.data.SqlDelightTransactionRepository
 import com.estudo.fintrack.db.FinTrackDatabase
 import com.estudo.fintrack.domain.usecase.SeedDefaultCategoriesUseCase
 import com.estudo.fintrack.presentation.SummaryViewModel
+import com.estudo.fintrack.presentation.TransactionFormViewModel
 import com.estudo.fintrack.presentation.TransactionViewModel
+import com.estudo.fintrack.ui.TransactionFormDialog
 import com.estudo.fintrack.ui.TransactionList
 
 
@@ -53,6 +57,12 @@ fun App(driverFactory: DatabaseDriverFactory) {
         val summaryState by summaryViewModel.uiState.collectAsStateWithLifecycle()
         val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
 
+        val formViewModel = viewModel { TransactionFormViewModel(transactionRepository, categoryRepository) }
+        val formState by formViewModel.state.collectAsStateWithLifecycle()
+
+        var showForm by remember { mutableStateOf(false) }
+
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -63,8 +73,8 @@ fun App(driverFactory: DatabaseDriverFactory) {
             Text("Gastos: ${summaryState.expense}")
             Text("Balance: ${summaryState.balance}")
 
-            Button(onClick = { summaryViewModel.addTestExpense() }) {
-                Text("Añadir gasto de prueba")
+            Button(onClick = { showForm = true}) {
+                Text("Nuevo movimiento")
             }
 
             TransactionList(transactionState.items, modifier = Modifier.weight(1f))
@@ -72,6 +82,18 @@ fun App(driverFactory: DatabaseDriverFactory) {
 
         }
 
+
+        if(showForm){
+            TransactionFormDialog(
+                state = formState,
+                onAmountChange = formViewModel::onAmountChange,
+                onTypeChange = formViewModel::onTypeChange,
+                onCategoryChange = formViewModel::onCategoryChange,
+                onNoteChange = formViewModel::onNoteChange,
+                onSave = formViewModel::save,
+                onDismiss = { showForm = false},
+            )
+        }
 
     }
 }
