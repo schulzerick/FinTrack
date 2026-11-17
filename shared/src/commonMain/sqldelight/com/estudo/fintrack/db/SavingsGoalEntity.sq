@@ -1,0 +1,19 @@
+CREATE TABLE SavingsGoalEntity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    targetCents INTEGER NOT NULL,
+    savedCents INTEGER NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM SavingsGoalEntity ORDER BY name;
+
+insert:
+INSERT INTO SavingsGoalEntity (name, targetCents)
+VALUES (?,?);
+
+updateSaved:
+UPDATE SavingsGoalEntity SET savedCents = ? WHERE id = ?;
+
+delete:
+DELETE FROM SavingsGoalEntity WHERE id = ?;

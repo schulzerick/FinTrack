@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.estudo.fintrack.data.DatabaseDriverFactory
+import com.estudo.fintrack.data.SqlDelightBudgetRepository
 import com.estudo.fintrack.data.SqlDelightCategoryRepository
+import com.estudo.fintrack.data.SqlDelightSavingsGoalRepository
 import com.estudo.fintrack.data.SqlDelightTransactionRepository
 import com.estudo.fintrack.db.FinTrackDatabase
 import com.estudo.fintrack.domain.usecase.SeedDefaultCategoriesUseCase
@@ -45,6 +47,14 @@ fun App(driverFactory: DatabaseDriverFactory) {
 
         val categoryRepository = remember {
             SqlDelightCategoryRepository(database)
+        }
+
+        val budgetRepository = remember {
+            SqlDelightBudgetRepository(database)
+        }
+
+        val savingsGoalRepository = remember {
+            SqlDelightSavingsGoalRepository(database)
         }
 
         LaunchedEffect(Unit) {

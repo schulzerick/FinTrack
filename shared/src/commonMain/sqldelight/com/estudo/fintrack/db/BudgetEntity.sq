@@ -1,0 +1,18 @@
+CREATE TABLE  BudgetEntity(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    categoryId INTEGER NOT NULL UNIQUE,
+    limitCents INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM BudgetEntity ORDER BY categoryId;
+
+insert:
+INSERT INTO BudgetEntity (categoryId, limitCents)
+VALUES(?,?);
+
+updateLimit:
+UPDATE BudgetEntity SET limitCents = ? WHERE id = ?;
+
+delete:
+DELETE FROM BudgetEntity WHERE id = ?;
