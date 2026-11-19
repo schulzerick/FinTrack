@@ -28,6 +28,10 @@ import com.estudo.fintrack.presentation.TransactionFormViewModel
 import com.estudo.fintrack.presentation.TransactionViewModel
 import com.estudo.fintrack.ui.TransactionFormDialog
 import com.estudo.fintrack.ui.TransactionList
+import com.estudo.fintrack.presentation.BudgetFormViewModel
+import com.estudo.fintrack.presentation.BudgetViewModel
+import com.estudo.fintrack.ui.BudgetFormDialog
+import com.estudo.fintrack.ui.BudgetList
 
 
 @Composable
@@ -70,6 +74,18 @@ fun App(driverFactory: DatabaseDriverFactory) {
         val formViewModel = viewModel { TransactionFormViewModel(transactionRepository, categoryRepository) }
         val formState by formViewModel.state.collectAsStateWithLifecycle()
 
+        val budgetViewModel = viewModel {
+            BudgetViewModel(budgetRepository, transactionRepository, categoryRepository)
+        }
+        val budgetState by budgetViewModel.uiState.collectAsStateWithLifecycle()
+
+        val budgetFormViewModel = viewModel {
+            BudgetFormViewModel(budgetRepository, categoryRepository)
+        }
+        val budgetFormState by budgetFormViewModel.state.collectAsStateWithLifecycle()
+
+        var showBudgetForm by remember { mutableStateOf(false) }
+
         var showForm by remember { mutableStateOf(false) }
 
 
@@ -89,7 +105,11 @@ fun App(driverFactory: DatabaseDriverFactory) {
 
             TransactionList(transactionState.items, modifier = Modifier.weight(1f))
 
+            Button(onClick = { showBudgetForm = true }) {
+                Text("Nuevo presupuesto")
+            }
 
+            BudgetList(budgetState.items, modifier = Modifier.weight(1f))
         }
 
 
@@ -102,6 +122,16 @@ fun App(driverFactory: DatabaseDriverFactory) {
                 onNoteChange = formViewModel::onNoteChange,
                 onSave = formViewModel::save,
                 onDismiss = { showForm = false},
+            )
+        }
+
+        if (showBudgetForm) {
+            BudgetFormDialog(
+                state = budgetFormState,
+                onLimitChange = budgetFormViewModel::onLimitChange,
+                onCategoryChange = budgetFormViewModel::onCategoryChange,
+                onSave = budgetFormViewModel::save,
+                onDismiss = { showBudgetForm = false },
             )
         }
 
