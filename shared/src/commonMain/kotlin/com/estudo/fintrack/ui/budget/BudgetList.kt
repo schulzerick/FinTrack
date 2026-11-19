@@ -6,7 +6,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.estudo.fintrack.presentation.BudgetItemUi
-import com.estudo.fintrack.presentation.TransactionItemUi
 
 @Composable
 

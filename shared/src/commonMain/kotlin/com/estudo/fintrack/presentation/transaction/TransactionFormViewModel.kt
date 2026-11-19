@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
@@ -33,20 +32,20 @@ class TransactionFormViewModel(
     }
 
     fun onAmountChange(text: String) {
-        _state.update { it.copy(amountText = text) }
+        _state.update { it.copy(amountText = text, error = null) }
     }
     fun onTypeChange(type: MovementType) {
-        _state.update { it.copy(type = type) }
+        _state.update { it.copy(type = type, error = null) }
     }
     fun onCategoryChange(id: Long) {
-        _state.update { it.copy(categoryId = id) }
+        _state.update { it.copy(categoryId = id, error = null) }
     }
     fun onNoteChange(text: String) {
-        _state.update { it.copy(note = text) }
+        _state.update { it.copy(note = text, error = null) }
     }
 
 
-    fun save(){
+    fun save(onSuccess: () -> Unit){
         val current = _state.value
 
         val cents = parseCents(current.amountText)
@@ -64,11 +63,14 @@ class TransactionFormViewModel(
         viewModelScope.launch {
             transactionRepository.add(Transaction(0, cents,
                 current.type, categoryId,
-                Clock.System.todayIn(TimeZone.currentSystemDefault()),
+                kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault()),
                 current.note)
             )
             _state.update { it.copy(amountText = "", note = "", categoryId = null, error = null) }
+            onSuccess()
         }
+
+
 
 
 

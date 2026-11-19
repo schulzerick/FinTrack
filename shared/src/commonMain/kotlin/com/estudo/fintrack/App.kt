@@ -30,8 +30,12 @@ import com.estudo.fintrack.ui.TransactionFormDialog
 import com.estudo.fintrack.ui.TransactionList
 import com.estudo.fintrack.presentation.BudgetFormViewModel
 import com.estudo.fintrack.presentation.BudgetViewModel
+import com.estudo.fintrack.presentation.GoalFormViewModel
+import com.estudo.fintrack.presentation.SavingsGoalViewModel
 import com.estudo.fintrack.ui.BudgetFormDialog
 import com.estudo.fintrack.ui.BudgetList
+import com.estudo.fintrack.ui.GoalFormDialog
+import com.estudo.fintrack.ui.GoalList
 
 
 @Composable
@@ -88,6 +92,16 @@ fun App(driverFactory: DatabaseDriverFactory) {
 
         var showForm by remember { mutableStateOf(false) }
 
+        val goalViewModel = viewModel { SavingsGoalViewModel(savingsGoalRepository) }
+
+        val goalFormViewModel = viewModel { GoalFormViewModel(savingsGoalRepository) }
+
+        val goalFormState by goalFormViewModel.state.collectAsStateWithLifecycle()
+
+        val goalState by goalViewModel.uiState.collectAsStateWithLifecycle()
+
+        var showGoalForm by remember { mutableStateOf(false) }
+
 
         Column(
             modifier = Modifier
@@ -110,6 +124,13 @@ fun App(driverFactory: DatabaseDriverFactory) {
             }
 
             BudgetList(budgetState.items, modifier = Modifier.weight(1f))
+
+            Button(onClick = {showGoalForm = true}){
+                Text("Nueva meta")
+            }
+
+            GoalList(goalState.items, modifier = Modifier.weight(1f))
+
         }
 
 
@@ -120,7 +141,7 @@ fun App(driverFactory: DatabaseDriverFactory) {
                 onTypeChange = formViewModel::onTypeChange,
                 onCategoryChange = formViewModel::onCategoryChange,
                 onNoteChange = formViewModel::onNoteChange,
-                onSave = formViewModel::save,
+                onSave = { formViewModel.save {showForm = false} },
                 onDismiss = { showForm = false},
             )
         }
@@ -130,10 +151,22 @@ fun App(driverFactory: DatabaseDriverFactory) {
                 state = budgetFormState,
                 onLimitChange = budgetFormViewModel::onLimitChange,
                 onCategoryChange = budgetFormViewModel::onCategoryChange,
-                onSave = budgetFormViewModel::save,
+                onSave = { budgetFormViewModel.save { showBudgetForm = false } },
                 onDismiss = { showBudgetForm = false },
             )
         }
+
+        if (showGoalForm) {
+            GoalFormDialog(
+                state = goalFormState,
+                onNameChange = goalFormViewModel::onNameChange,
+                onTargetChange = goalFormViewModel::onTargetChange,
+                onSave = { goalFormViewModel.save { showGoalForm = false } },
+                onDismiss = { showGoalForm = false },
+            )
+        }
+
+
 
     }
 }
